@@ -1,24 +1,21 @@
 module Benchmark.Suite.ST where
 
 import Prelude (Unit)
-import Control.Monad.Eff (Eff)
-import Control.Monad.ST (ST)
+import Effect (Effect)
+import Control.Monad.ST (ST, kind Region)
 
-foreign import data STSuite :: Type -> Type
+foreign import data STSuite :: Region -> Type
 foreign import data BenchmarkEvent :: Type
 
 -- API
 --------------------
 
-foreign import new :: forall h r. Eff (st :: ST h | r) (STSuite h)
+foreign import new :: forall s. ST s (STSuite s)
 
-foreign import add :: forall s e anyEff a.
-  STSuite s -> String -> (Eff anyEff a) -> Eff (st :: ST s | e) Unit
+foreign import add :: forall s a.  STSuite s -> String -> Effect a -> ST s Unit
 
-foreign import run :: forall h e. STSuite h -> Eff (st :: ST h | e) Unit
-
-foreign import on :: forall h e anyEff.
-  STSuite h -> String -> (BenchmarkEvent -> Eff anyEff Unit) -> Eff (st :: ST h | e) Unit
+foreign import on :: forall h.
+  STSuite h -> String -> (BenchmarkEvent -> Effect Unit) -> ST h Unit
 
 -- Extra
 --------------------
@@ -31,5 +28,5 @@ type BenchmarkResult =
     }
   }
 
-foreign import accumulateResults :: forall s e anyEff.
-  STSuite s -> (Array BenchmarkResult -> Eff anyEff Unit) -> Eff (st :: ST s | e) Unit
+foreign import accumulateResults :: forall s.
+  STSuite s -> (Array BenchmarkResult -> Effect Unit) -> ST s Unit

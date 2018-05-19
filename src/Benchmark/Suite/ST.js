@@ -25,28 +25,8 @@ exports.add = function(suite) {
   };
 };
 
-// Benchmark.Suite.prototype.run([options={}])
-exports.run = function(suite) {
-  return function(){
-    suite.run();
-  };
-}
-
 // Benchmark.Suite.prototype.on(type, listener)
 exports.on = function(suite) {
-  return function(type) {
-    return function(listener) {
-      return function() {
-	suite.on(type, function(e) {
-	  listener(e)();
-	});
-      };
-    };
-  };
-}
-
-// Benchmark.Suite.prototype.on(type, listener)
-exports.on2 = function(suite) {
   return function(type) {
     return function(listener) {
       return function() {

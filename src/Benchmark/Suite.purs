@@ -11,36 +11,37 @@ module Benchmark.Suite
   ) where
 
 import Prelude
-import Control.Monad.ST as ST
-import Control.Monad.Eff (Eff, runPure)
+
 import Benchmark.Suite.ST (STSuite)
+import Control.Monad.ST (ST)
+import Control.Monad.ST as ST
+import Effect (Effect)
 
 foreign import data Suite :: Type
-foreign import _copy :: forall a b h e. a -> Eff (st :: ST.ST h | e) b
+foreign import _copy :: forall a b h. a -> ST h b
 
 -- | Copy a mutable Suite
-copy :: forall h e. STSuite h -> Eff (st :: ST.ST h | e) (STSuite h)
+copy :: forall h. STSuite h -> ST h (STSuite h)
 copy = _copy
 
 -- | Convert an immutable Suite to a mutable Suite
-thawST :: forall h e. Suite -> Eff (st :: ST.ST h | e) (STSuite h)
+thawST :: forall h. Suite -> ST h (STSuite h)
 thawST = _copy
 
 -- | Convert a mutable Suite to an immutable Suite
-freezeST :: forall h e. STSuite h -> Eff (st :: ST.ST h | e) Suite
+freezeST :: forall h. STSuite h -> ST h Suite
 freezeST = _copy
 
 -- | Freeze a mutable Suite object, creating an immutable object. Use this
 -- | function as you would use `Prelude.runST` to freeze a mutable reference.
 -- |
 -- | The rank-2 type prevents the map from escaping the scope of `runST`.
-foreign import runST :: forall e.
-  (forall h. Eff (st :: ST.ST h | e) (STSuite h)) -> Eff e Suite
+foreign import runST :: (forall h. ST h (STSuite h)) -> Effect Suite
 
-pureST :: (forall s e. Eff (st :: ST.ST s | e) (STSuite s)) -> Suite
-pureST f = runPure (runST f)
+pureST :: (forall s. ST s (STSuite s)) -> Suite
+pureST f = ST.run (f >>= freezeST)
 
-mutate :: forall b. (forall s e. STSuite s -> Eff (st :: ST.ST s | e) b)
+mutate :: forall b. (forall s. STSuite s -> ST s b)
   -> Suite
   -> Suite
 mutate f suiteST = pureST do
